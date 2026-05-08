@@ -9,7 +9,7 @@
   const WORLD_W = 3550;
   const GRAVITY = 0.48;
   const MAX_FALL = 10;
-  const TITLE = 'Pixel Dash Run';
+  const TITLE = 'Morita Pixel Run';
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
@@ -29,6 +29,11 @@
   const imgNames = {
     bgFar: 'assets/bg_far_stage1.png',
     bgMid: 'assets/bg_mid_stage1.png',
+    playerSmall: 'assets/player_small.png',
+    playerBig: 'assets/player_big.png',
+    enemy: 'assets/enemy_stage3.png',
+    item: 'assets/item_stage3.png',
+    boss: 'assets/boss.png',
     tiles: 'assets/tiles.png'
   };
   const images = {};
@@ -41,7 +46,11 @@
     });
   }
 
-  const sourceRects = {};
+  const sourceRects = {
+    enemy: { x: 640, y: 64, w: 768, h: 1792 },
+    item: { x: 288, y: 32, w: 960, h: 1408 },
+    boss: { x: 128, y: 64, w: 1120, h: 1344 }
+  };
 
   function rect(x, y, w, h) { return { x, y, w, h }; }
 
@@ -563,17 +572,10 @@
       const x = Math.floor(g.x - cameraX);
       const y = Math.floor(g.y + LEVEL_Y + bob);
       if (x < -30 || x > SCREEN_W + 30) continue;
-      ctx.save();
-      ctx.translate(x + 7, y + 7);
-      ctx.fillStyle = '#65f7ff';
-      ctx.beginPath();
-      ctx.moveTo(0, -11);
-      ctx.lineTo(10, 0);
-      ctx.lineTo(0, 11);
-      ctx.lineTo(-10, 0);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
+      if (!drawImageCrop('item', sourceRects.item.x, sourceRects.item.y, sourceRects.item.w, sourceRects.item.h, x - 6, y - 8, 30, 34)) {
+        ctx.fillStyle = '#65f7ff';
+        ctx.fillRect(x, y, 14, 14);
+      }
       ctx.globalAlpha = 0.45;
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(x + 4, y + 2, 4, 4);
@@ -590,16 +592,10 @@
       const h = e.alive ? 48 : 16;
       const dy = e.alive ? y - 20 : y + 14;
       const wobble = e.alive ? Math.sin(runTimer * 0.09 + e.x) * 2 : 0;
-      ctx.save();
-      ctx.translate(x + 12 + wobble, dy + h / 2);
-      ctx.fillStyle = e.alive ? '#7c3aed' : '#4c1d95';
-      ctx.fillRect(-16, -h / 2, 32, h);
-      ctx.fillStyle = '#c4b5fd';
-      ctx.fillRect(-10, -h / 2 + 8, 8, 8);
-      ctx.fillRect(4, -h / 2 + 8, 8, 8);
-      ctx.fillStyle = '#1f1235';
-      ctx.fillRect(-12, h / 2 - 10, 24, 5);
-      ctx.restore();
+      if (!drawImageCrop('enemy', sourceRects.enemy.x, sourceRects.enemy.y, sourceRects.enemy.w, sourceRects.enemy.h, x - 10 + wobble, dy, 50, h, e.vx > 0)) {
+        ctx.fillStyle = '#7c3aed';
+        ctx.fillRect(x - 8, dy, 44, h);
+      }
     }
   }
 
@@ -640,6 +636,7 @@
 
   function drawPlayer() {
     if (player.inv > 0 && Math.floor(player.inv / 4) % 2 === 0) return;
+    const img = player.powered > 0 ? images.playerBig : images.playerSmall;
     const dw = player.powered > 0 ? 58 : 50;
     const dh = player.powered > 0 ? 62 : 52;
     const x = Math.floor(player.x + player.w / 2 - dw / 2 - cameraX);
@@ -651,20 +648,14 @@
       ctx.fillRect(x - player.facing * 20, y + 18, 44, 10);
       ctx.globalAlpha = 1;
     }
-    ctx.translate(x + dw / 2, y + dh);
-    ctx.scale(player.facing, 1);
-    ctx.fillStyle = player.powered > 0 ? '#facc15' : '#ef4444';
-    ctx.fillRect(-13, -dh + 12, 26, dh - 18);
-    ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(-15, -dh + 2, 30, 16);
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(3, -dh + 7, 5, 5);
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillRect(-19, -dh + 26, 8, 16);
-    ctx.fillRect(11, -dh + 26, 8, 16);
-    ctx.fillStyle = '#1d4ed8';
-    ctx.fillRect(-13, -8, 10, 8);
-    ctx.fillRect(3, -8, 10, 8);
+    if (img) {
+      ctx.translate(x + dw / 2, y + dh);
+      ctx.scale(player.facing, 1);
+      ctx.drawImage(img, -dw / 2, -dh, dw, dh);
+    } else {
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(x, y, dw, dh);
+    }
     ctx.restore();
   }
 
